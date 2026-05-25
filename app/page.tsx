@@ -1,65 +1,141 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
 
 export default function Home() {
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [review, setReview] = useState<any>(null);
+
+  const analyzeCode = async () => {
+    if (!code.trim()) return;
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/review", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code }),
+      });
+
+      const data = await res.json();
+      setReview(data);
+    } catch (error) {
+      console.error(error);
+    }
+
+    setLoading(false);
+  };
+
+  const score = review?.merge_score || 0;
+
+  const scoreColor =
+    score >= 80
+      ? "text-green-400"
+      : score >= 60
+      ? "text-yellow-400"
+      : "text-red-400";
+
+  const statusText =
+    score >= 80
+      ? "✅ Approved to Merge"
+      : score >= 60
+      ? "⚠ Requires Fix Before Merge"
+      : "❌ Block Merge";
+
+  const statusStyle =
+    score >= 80
+      ? "bg-green-500/10 border-green-500 text-green-400"
+      : score >= 60
+      ? "bg-yellow-500/10 border-yellow-500 text-yellow-400"
+      : "bg-red-500/10 border-red-500 text-red-400";
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen bg-black text-white px-8 py-12 md:px-16">
+
+      {/* Header */}
+      <div className="mb-10">
+        <h1 className="text-6xl md:text-7xl font-extrabold bg-gradient-to-r from-white to-gray-500 bg-clip-text text-transparent">
+          CodeGuard AI
+        </h1>
+
+        <p className="text-gray-400 text-xl mt-4">
+          AI-powered code review before you merge to production.
+        </p>
+      </div>
+
+      {/* Code Input */}
+      <textarea
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        placeholder="Paste your code here..."
+        className="w-full h-72 rounded-3xl bg-zinc-900 border border-zinc-800 p-6 text-lg text-white outline-none focus:border-yellow-400 transition"
+      />
+
+      {/* Review Button */}
+      <button
+        onClick={analyzeCode}
+        className="mt-6 rounded-2xl bg-white px-8 py-4 text-black font-bold text-lg hover:scale-105 hover:bg-gray-200 transition duration-300 shadow-xl"
+      >
+        {loading ? "Reviewing..." : "Review Code"}
+      </button>
+
+      {/* Review Result */}
+      {review && (
+        <div className="mt-14">
+
+          {/* Score */}
+         <h2 className={`text-5xl font-bold ${scoreColor}`}>
+           <span className="mr-3">⚠️</span>
+            Merge Score: {score}/100
+          </h2>
+
+          {/* Merge Decision */}
+          <div
+            className={`mt-6 rounded-3xl border p-6 backdrop-blur-md ${statusStyle}`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <h3 className="text-3xl font-bold">
+              {statusText}
+            </h3>
+
+            <p className="mt-3 text-gray-300 text-lg">
+              {review.summary}
+            </p>
+          </div>
+
+          {/* Issues */}
+          <div className="mt-8 grid gap-6">
+            {review.issues?.map((issue: any, index: number) => (
+              <div
+                key={index}
+                className="rounded-3xl bg-zinc-900 border border-zinc-800 p-6 shadow-2xl hover:shadow-yellow-500/10 transition duration-300"
+              >
+                <p className="text-2xl mb-3">
+                  <span className="font-bold">Type:</span> {issue.type}
+                </p>
+
+                <p className="text-xl mb-3 text-red-400">
+                  <span className="font-bold">Severity:</span>{" "}
+                  {issue.severity}
+                </p>
+
+                <p className="text-lg text-gray-200 mb-3">
+                  <span className="font-bold text-white">Problem:</span>{" "}
+                  {issue.problem}
+                </p>
+
+                <p className="text-lg text-green-400">
+                  <span className="font-bold">Fix:</span> {issue.fix}
+                </p>
+              </div>
+            ))}
+          </div>
+
         </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }
