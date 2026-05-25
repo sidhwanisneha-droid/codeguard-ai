@@ -13,13 +13,13 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/review", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code }),
-      });
+      const res = await fetch("/api/analyze", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ code }),
+});
 
       const data = await res.json();
       setReview(data);
@@ -91,7 +91,7 @@ export default function Home() {
          <h2 className={`text-5xl font-bold ${scoreColor}`}>
            <span className="mr-3">⚠️</span>
             Merge Score: {score}/100
-          </h2>
+          127.0.0.1:8000</h2>
 
           {/* Merge Decision */}
           <div
